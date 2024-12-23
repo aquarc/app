@@ -14,6 +14,10 @@ class _SatPageState extends State<SatPage> {
     HashSet<String> _selectedDifficulties = HashSet<String>();
     List<Question> _questions = [];
 
+    int _selectedQuestionIndex = 0;
+    // could be index or for math can be an actual number
+    String _selectedAnswer = "";
+
     bool _difficultyIsExpanded = false;
 
     static const difficulties = [
@@ -81,7 +85,6 @@ class _SatPageState extends State<SatPage> {
             'difficulty': _selectedDifficulties.toList(),
             'test': 'SAT',
           };
-          print(json.encode(requestPayload));
 
           // Make a POST request to fetch questions
           final response = await http.post(
@@ -92,12 +95,10 @@ class _SatPageState extends State<SatPage> {
 
           if (response.statusCode == 200) {
             final data = json.decode(response.body); // Parse the JSON response
-            print(data);
             setState(() {
               _questions = data.map<Question>((question) => 
                 Question.fromJson(question)).toList(); 
             });
-            print('Questions fetched successfully');
 
             // now close all open ExpansionTiles
             setState(() {
@@ -144,53 +145,77 @@ class _SatPageState extends State<SatPage> {
         );
     }
 
+    ButtonStyle answerStyle(String button) {
+        if (_selectedAnswer == button) {
+            if (_questions[_selectedQuestionIndex].answer == button) {
+                return ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.green));
+            } else {
+                return ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.red));
+            }
+        }
+
+        return ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.blue));
+    }
+
     Widget _loadAnswerChoices() {
-        if (_questions[0].answerChoices != null 
-            && _questions[0].answerChoices!.isNotEmpty) {
+        if (_questions == null || _questions.isEmpty) {
+            return Text("");
+        }
+
+        if (_questions[_selectedQuestionIndex].answerChoices != null 
+            && _questions[_selectedQuestionIndex].answerChoices!.isNotEmpty) {
             return Column(children: <Widget>[
                 ElevatedButton(
                     onPressed: () {
                         setState(() {
-                            
+                            _selectedAnswer = "A";
                         });
                     },
                     child: HtmlWidget(
-                        _questions[0].answerChoices![0].content,
+                        "A: " +_questions[_selectedQuestionIndex]
+                            .answerChoices![_selectedQuestionIndex].content,
                         textStyle: TextStyle(fontSize: 18.0),
                     ),
+                    style: answerStyle("A"),
                 ),
                 ElevatedButton(
                     onPressed: () {
                         setState(() {
-                            
+                            _selectedAnswer = "B";
                         });
                     },
                     child: HtmlWidget(
-                        _questions[0].answerChoices![1].content,
+                        "B: " + _questions[_selectedQuestionIndex]
+                            .answerChoices![1].content,
                         textStyle: TextStyle(fontSize: 18.0),
                     ),
+                    style: answerStyle("B"),
                 ),
                 ElevatedButton(
                     onPressed: () {
                         setState(() {
-                            
+                            _selectedAnswer = "C";
                         });
                     },
                     child: HtmlWidget(
-                        _questions[0].answerChoices![2].content,
+                        "C: " + _questions[_selectedQuestionIndex]
+                            .answerChoices![2].content,
                         textStyle: TextStyle(fontSize: 18.0),
                     ),
+                    style: answerStyle("C"),
                 ),
                 ElevatedButton(
                     onPressed: () {
                         setState(() {
-                            
+                            _selectedAnswer = "D";
                         });
                     },
                     child: HtmlWidget(
-                        _questions[0].answerChoices![3].content,
+                        "D: " + _questions[_selectedQuestionIndex]
+                            .answerChoices![3].content,
                         textStyle: TextStyle(fontSize: 18.0),
                     ),
+                    style: answerStyle("D"),
                 ),
             ]);
         } else {
@@ -208,7 +233,7 @@ class _SatPageState extends State<SatPage> {
                             padding: const EdgeInsets.all(8.0),
                         ),
                         HtmlWidget(
-                            _questions[0].details,
+                            _questions[_selectedQuestionIndex].details,
                             textStyle: const TextStyle(
                                 fontSize: 16,
                             ),
@@ -217,7 +242,7 @@ class _SatPageState extends State<SatPage> {
                             padding: const EdgeInsets.all(8.0),
                         ),
                         HtmlWidget(
-                            _questions[0].question,
+                            _questions[_selectedQuestionIndex].question,
                             textStyle: const TextStyle(
                                 fontSize: 16,
                             ),
@@ -246,6 +271,28 @@ class _SatPageState extends State<SatPage> {
                     ),
                     _buildQuestionDisplay(),
                     _loadAnswerChoices(),
+                    ElevatedButton(
+                        onPressed: () {
+                            setState(() {
+                                if (_selectedQuestionIndex > 0) {
+                                    _selectedQuestionIndex = _selectedQuestionIndex - 1;
+                                } else {
+                                    _selectedQuestionIndex = _questions.length - 1;
+                                }
+                            });
+                        },
+                        child: Text('Previous'),
+                    ),
+                    ElevatedButton(
+                        onPressed: () {
+                            setState(() {
+                                _selectedQuestionIndex = 
+                                    (_selectedQuestionIndex + 1) 
+                                    % _questions.length;
+                            });
+                        },
+                        child: Text('Next'),
+                    ),
                 ],
             ),
         );
